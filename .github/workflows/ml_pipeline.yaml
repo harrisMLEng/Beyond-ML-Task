@@ -1,0 +1,37 @@
+name: Conditional CI Pipeline
+
+# Trigger the workflow only when a merge happens to the 'development' branch.
+on:
+  push:
+    branches:
+      - development
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest scikit-learn flake8
+    
+    # Linting with flake8
+    - name: Lint code with flake8
+      run: flake8 .
+      # Condition to run linting only if any python files were changed
+      if: github.event.commits.*.modified contains 'py'
+
+    # Running tests with pytest
+    - name: Run tests with pytest
+      run: pytest
+      # Condition to run tests only if there are test files modified or added
+      if: github.event.commits.*.modified contains 'test_'
