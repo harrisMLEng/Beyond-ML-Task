@@ -1,6 +1,6 @@
 name: Conditional CI Pipeline
 
-# Trigger the workflow only when a merge happens to the 'development' branch.
+# Trigger the workflow on push to the 'development' branch.
 on:
   push:
     branches:
@@ -25,13 +25,18 @@ jobs:
         pip install pytest scikit-learn flake8
     
     # Linting with flake8
+    - name: Get modified files
+      id: modified_files
+      run: |
+        git fetch origin ${{ github.event.before }} --depth=1
+        git diff --name-only ${{ github.event.before }} ${{ github.sha }} > modified_files.txt
+        cat modified_files.txt
+
     - name: Lint code with flake8
+      if: contains(steps.modified_files.outputs.modified_files, '.py')
       run: flake8 .
-      # Condition to run linting only if any python files were changed
-      if: github.event.commits.*.modified contains 'py'
 
     # Running tests with pytest
     - name: Run tests with pytest
+      if: contains(steps.modified_files.outputs.modified_files, 'test_')
       run: pytest
-      # Condition to run tests only if there are test files modified or added
-      if: github.event.commits.*.modified contains 'test_'
